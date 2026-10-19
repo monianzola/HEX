@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hexarena"
+version = "0.1.0"
+description = "Hex game engine, bot platform and automatic tournament."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "hex-arena contributors" }]
+keywords = ["hex", "game", "ai", "bots", "mcts", "alpha-beta", "tournament"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Games/Entertainment :: Board Games",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# The core library depends only on the standard library.
+dependencies = []
+
+[project.optional-dependencies]
+web = ["streamlit>=1.30"]
+docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
+
+[project.urls]
+Homepage = "https://github.com/monianzola/HEX"
+Issues = "https://github.com/monianzola/HEX/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hexarena = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["hexarena"]
+branch = true
