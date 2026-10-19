@@ -13,6 +13,17 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## Jugar en la web
+
+▶️ **[Jugar a Hex contra un bot](https://ENLACE-PENDIENTE.streamlit.app)** (Streamlit Community Cloud)
+
+Para ejecutarla en local:
+
+```bash
+pip install -e ".[web]"
+streamlit run app/app.py
+```
+
 ## Licencia
 
 MIT. Consulta [LICENSE](LICENSE).
