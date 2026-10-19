@@ -1,0 +1,4 @@
+# Dependencies for Streamlit Community Cloud (entry point: app/app.py).
+# "." installs the hexarena package from this repository.
+streamlit>=1.50
+.
