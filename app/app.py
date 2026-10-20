@@ -9,16 +9,22 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import streamlit as st
+from streamlit_image_coordinates import streamlit_image_coordinates
 
+APP_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(APP_DIR))  # So ``board_render`` imports on Streamlit Cloud.
 try:
     import hexarena  # noqa: F401
 except ImportError:  # Allow running from a clone without ``pip install``.
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    sys.path.insert(0, str(APP_DIR.parent / "src"))
 
-from hexarena.bots import available_bots, create_bot, get_bot
-from hexarena.game import BLUE, EMPTY, RED, HexGame, HexState, IllegalMoveError, Move
+from board_render import draw_board, geometry, pixel_to_cell  # noqa: E402
+
+from hexarena.bots import available_bots, create_bot, get_bot  # noqa: E402
+from hexarena.game import BLUE, EMPTY, RED, HexGame, HexState, IllegalMoveError, Move  # noqa: E402
 
 HUMAN = RED
 BOT = BLUE
@@ -35,13 +41,21 @@ ss = st.session_state
 # --------------------------------------------------------------------------- game actions
 
 
+def board_key() -> str:
+    """Key of the board component. It changes every game, so a new game
+    starts with a fresh component instead of replaying the previous click."""
+    return f"board-{ss.game_id}"
+
+
 def new_game() -> None:
     """Start a new game with the size and bot selected in the sidebar."""
+    ss.game_id = ss.get("game_id", -1) + 1
     ss.game = HexGame(ss.size)
     ss.state = ss.game.initial_state()
     ss.moves = []
     ss.bot = create_bot(ss.bot_name)
     ss.message = None
+    ss.last_click = None
 
 
 def bot_move() -> None:
@@ -68,12 +82,43 @@ def human_move(move: Move) -> None:
     try:
         ss.state = game.play(state, move)
     except IllegalMoveError as exc:
-        ss.message = f"Jugada ilegal: {exc}"
+        ss.notice = f"Jugada ilegal: {exc}"
         return
     ss.moves.append(move)
     ss.message = None
     if not game.is_terminal(ss.state):
         bot_move()
+
+
+def handle_click(click: dict[str, Any] | None) -> None:
+    """Turn a click from the board image into a move, at most once per click.
+
+    ``streamlit_image_coordinates`` keeps returning the last click on every
+    rerun, so the processed click is remembered in ``ss.last_click``.
+    """
+    if not click or click == ss.last_click:
+        return
+    ss.last_click = click
+
+    size = ss.state.size
+    width, height = geometry(size).image_size
+    # The browser may shrink the image; convert to image pixels.
+    x = click["x"] * width / click.get("width", width)
+    y = click["y"] * height / click.get("height", height)
+    cell = pixel_to_cell(x, y, size)
+    if cell is None:
+        return  # Click on the margin or outside the rhombus.
+
+    game: HexGame = ss.game
+    state: HexState = ss.state
+    if game.is_terminal(state):
+        ss.notice = "La partida ha terminado. Pulsa «Nueva partida» para jugar otra."
+    elif game.current_player(state) != HUMAN:
+        return
+    elif state.board[cell[0]][cell[1]] != EMPTY:
+        ss.notice = f"La casilla {cell} ya está ocupada."
+    else:
+        human_move(cell)
 
 
 # --------------------------------------------------------------------------- rendering
@@ -104,9 +149,9 @@ def render_sidebar(bot_names: list[str]) -> None:
         st.divider()
         st.markdown(
             "**Reglas**\n\n"
-            "- Tú eres **🔴 Rojo** y empiezas: une el borde de **arriba** con el de **abajo**.\n"
-            "- El bot es **🔵 Azul**: une la **izquierda** con la **derecha**.\n"
-            "- Cada casilla tiene 6 vecinas. En Hex nunca hay empate."
+            "- Tú eres **🔴 Rojo** y empiezas: une el borde **rojo de arriba** con el **de abajo**.\n"
+            "- El bot es **🔵 Azul**: une el borde **azul de la izquierda** con el **de la derecha**.\n"
+            "- Haz clic en un hexágono vacío para jugar. En Hex nunca hay empate."
         )
 
 
@@ -125,43 +170,9 @@ def render_status() -> None:
 
 
 def render_board() -> None:
-    """Draw the rhombus: each row is shifted half a cell to the right."""
-    game: HexGame = ss.game
-    state: HexState = ss.state
-    size = state.size
-    finished = game.is_terminal(state)
     last_move = ss.moves[-1] if ss.moves else None
-
-    # Each row has: shift spacer, left Blue edge, N cells, right Blue edge, filler.
-    total_shift = (size - 1) * 0.5
-
-    def row_columns(shift: float) -> list:
-        widths = [shift or 0.001, 0.6] + [1] * size + [0.6, (total_shift - shift) or 0.001]
-        return st.columns(widths, gap="small")
-
-    top = row_columns(0)
-    for c in range(size):
-        top[2 + c].markdown("<div style='text-align:center'>🟥</div>", unsafe_allow_html=True)
-
-    for r, row in enumerate(state.board):
-        cols = row_columns(r * 0.5)
-        cols[1].markdown("<div style='text-align:center'>🟦</div>", unsafe_allow_html=True)
-        for c, value in enumerate(row):
-            cols[2 + c].button(
-                STONES[value],
-                key=f"cell-{r}-{c}",
-                on_click=human_move,
-                args=((r, c),),
-                disabled=finished or value != EMPTY,
-                type="primary" if (r, c) == last_move else "secondary",
-                help=f"({r}, {c})",
-                width="stretch",
-            )
-        cols[2 + size].markdown("<div style='text-align:center'>🟦</div>", unsafe_allow_html=True)
-
-    bottom = row_columns(total_shift)
-    for c in range(size):
-        bottom[2 + c].markdown("<div style='text-align:center'>🟥</div>", unsafe_allow_html=True)
+    image = draw_board(ss.state, last_move, ss.state.size)
+    streamlit_image_coordinates(image, key=board_key(), width="content", cursor="pointer")
 
 
 def render_history() -> None:
@@ -178,10 +189,6 @@ def render_history() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Hex Arena", page_icon="⬢", layout="wide")
-    st.markdown(
-        "<style>div[data-testid='stButton'] button {padding: 0.1rem 0; min-height: 2.2rem;}</style>",
-        unsafe_allow_html=True,
-    )
 
     bot_names = available_bots()
     if "size" not in ss:
@@ -191,9 +198,15 @@ def main() -> None:
     if "state" not in ss:
         new_game()
 
+    # Process the click *before* drawing, so the image already shows the
+    # human move and the bot's reply in this same run.
+    handle_click(ss.get(board_key()))
+
     st.title("⬢ Hex Arena")
     st.caption("Juega una partida de Hex contra uno de los bots del proyecto **hexarena**.")
     render_sidebar(bot_names)
+    if notice := ss.pop("notice", None):
+        st.toast(notice, icon="⚠️")
     render_status()
     render_board()
     render_history()
