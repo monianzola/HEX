@@ -26,7 +26,8 @@ dependencies = []
 
 [project.optional-dependencies]
 web = ["streamlit>=1.50", "streamlit-image-coordinates>=0.4", "pillow>=10.0"]
-docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
+# MkDocs 2.0 drops the plugin system that mkdocstrings needs: stay on 1.x.
+docs = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5", "mkdocstrings[python]>=0.24"]
 dev = ["pytest>=8.0", "pytest-cov>=5.0"]
 
 [project.urls]
