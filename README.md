@@ -13,6 +13,10 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## Documentación
+
+📖 **[Documentación en ReadTheDocs](https://ENLACE-PENDIENTE.readthedocs.io)**: reglas, instalación, referencia del API y tutorial para crear tu propio bot.
+
 ## Jugar en la web
 
 ▶️ **[Jugar a Hex contra un bot](https://ENLACE-PENDIENTE.streamlit.app)** (Streamlit Community Cloud)
