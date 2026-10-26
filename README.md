@@ -15,7 +15,7 @@ pytest
 
 ## Documentación
 
-📖 **[Documentación en ReadTheDocs](https://ENLACE-PENDIENTE.readthedocs.io)**: reglas, instalación, referencia del API y tutorial para crear tu propio bot.
+📖 **[Documentación en ReadTheDocs](https://hex-arena-cunef.readthedocs.io/es/latest/)**: reglas, instalación, referencia del API y tutorial para crear tu propio bot.
 
 ## Jugar en la web
 
