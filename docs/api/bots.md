@@ -36,6 +36,8 @@ El [tutorial](../tutorial-bot.md) explica el proceso completo paso a paso.
         - evaluate
         - with_stone
         - center_distance
+        - distance_map
+        - path_slack
         - WIN_SCORE
 
 ## Bots incluidos
@@ -43,3 +45,7 @@ El [tutorial](../tutorial-bot.md) explica el proceso completo paso a paso.
 ::: hexarena.bots.random_bot.RandomBot
 
 ::: hexarena.bots.shortest_path.ShortestPathBot
+
+::: hexarena.bots.alpha_beta.AlphaBetaBot
+
+::: hexarena.bots.alpha_beta.AlphaBetaSearch

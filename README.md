@@ -115,6 +115,7 @@ Guía completa: **[Tutorial: sube tu primer bot](https://hex-arena-cunef.readthe
 |---|---|---|
 | `RandomBot` | `random` | Jugada legal al azar. Sirve de referencia mínima. |
 | `ShortestPathBot` | `shortest-path` | Para cada jugada calcula con 0-1 BFS cuántas fichas le faltan a cada jugador, y maximiza *distancia del rival − distancia propia*. |
+| `AlphaBetaBot` | `alpha-beta` | Minimax con poda alfa-beta y profundización iterativa (80 % del tiempo), 20 candidatos por nodo ordenados por cercanía a los caminos más cortos. Gana el 85 % de las partidas a `ShortestPathBot`. |
 
 ## Torneo
 
