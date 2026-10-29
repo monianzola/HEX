@@ -15,7 +15,7 @@ import math
 from collections import deque
 
 from hexarena.game.hex_game import neighbors
-from hexarena.game.state import RED, Board, Move, opponent
+from hexarena.game.state import EMPTY, RED, Board, Move, opponent
 
 WIN_SCORE = 10_000.0
 """Score of a position the player has already won (larger than any distance)."""
@@ -112,3 +112,71 @@ def center_distance(move: Move, size: int) -> float:
     center = (size - 1) / 2
     dr, dc = move[0] - center, move[1] - center
     return (abs(dr) + abs(dc) + abs(dr + dc)) / 2
+
+
+def distance_map(board: Board, player: int, from_start: bool = True) -> list[list[float]]:
+    """Cheapest cost to reach every cell from one of ``player``'s edges.
+
+    Same 0-1 BFS as :func:`shortest_path_distance`, but it does not stop at
+    the goal and returns the whole grid. The cost of a cell includes the
+    cell itself (0 if it is the player's stone, 1 if empty); opponent
+    cells stay at ``math.inf``.
+
+    Args:
+        board: The board.
+        player: ``RED`` or ``BLUE``.
+        from_start: Start from the first edge (top/left) if ``True``,
+            otherwise from the second edge (bottom/right).
+    """
+    size = len(board)
+    rival = opponent(player)
+    edge = 0 if from_start else size - 1
+    starts = [(edge, c) for c in range(size)] if player == RED else [(r, edge) for r in range(size)]
+    dist = [[math.inf] * size for _ in range(size)]
+    queue: deque[tuple[float, int, int]] = deque()
+    for r, c in starts:
+        if board[r][c] == rival:
+            continue
+        cost = 0 if board[r][c] == player else 1
+        dist[r][c] = cost
+        (queue.appendleft if cost == 0 else queue.append)((cost, r, c))
+    while queue:
+        d, r, c = queue.popleft()
+        if d > dist[r][c]:
+            continue
+        for nr, nc in neighbors((r, c), size):
+            value = board[nr][nc]
+            if value == rival:
+                continue
+            step = 0 if value == player else 1
+            if d + step < dist[nr][nc]:
+                dist[nr][nc] = d + step
+                (queue.appendleft if step == 0 else queue.append)((d + step, nr, nc))
+    return dist
+
+
+def path_slack(board: Board, player: int) -> dict[Move, float]:
+    """For every empty cell, how far it is from lying on a shortest path.
+
+    ``slack = (cheapest path forced through the cell) - (cheapest path overall)``.
+    A slack of 0 means the cell is on one of ``player``'s shortest paths, so
+    it is critical: playing there helps that player, and the opponent
+    playing there blocks them. Cells that cannot be part of any path are
+    left out.
+    """
+    size = len(board)
+    top = distance_map(board, player, from_start=True)
+    bottom = distance_map(board, player, from_start=False)
+    best = min(
+        (top[r][c] for r in range(size) for c in range(size)
+         if (r if player == RED else c) == size - 1),
+        default=math.inf,
+    )
+    slack: dict[Move, float] = {}
+    for r in range(size):
+        for c in range(size):
+            if board[r][c] == EMPTY:
+                through = top[r][c] + bottom[r][c] - 1  # The cell is counted twice.
+                if through < math.inf:
+                    slack[(r, c)] = through - best
+    return slack
