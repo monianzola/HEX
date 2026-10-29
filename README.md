@@ -9,7 +9,7 @@ Motor del juego **Hex** en Python, plataforma abierta de bots y torneo automáti
 
 | | |
 |---|---|
-| ▶️ **Jugar en la web** | _Próximamente_ (Streamlit Community Cloud) |
+| ▶️ **Jugar en la web** | [hex-arena-cunef.streamlit.app](https://hex-arena-cunef.streamlit.app) (Streamlit Community Cloud) |
 | 📖 **Documentación** | [hex-arena-cunef.readthedocs.io](https://hex-arena-cunef.readthedocs.io/es/latest/) |
 | 🏆 **Clasificación del torneo** | [monianzola.github.io/HEX](https://monianzola.github.io/HEX/) (GitHub Pages, se actualiza sola) |
 
@@ -73,6 +73,10 @@ print(game.current_player(state))    # 2 (turno de Azul)
 ```
 
 ## Jugar en la web
+
+▶️ **[Juega ahora en hex-arena-cunef.streamlit.app](https://hex-arena-cunef.streamlit.app)**: sin instalar nada.
+
+Para ejecutarla en local:
 
 ```bash
 pip install -e ".[web]"

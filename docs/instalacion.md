@@ -63,6 +63,8 @@ pytest
 
 ## Jugar en la web
 
+La versión publicada está en **[hex-arena-cunef.streamlit.app](https://hex-arena-cunef.streamlit.app)**. Para ejecutarla en local:
+
 ```bash
 pip install -e ".[web]"
 streamlit run app/app.py
