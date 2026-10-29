@@ -137,7 +137,8 @@ HEX/
 Trabajamos con ramas y pull requests: `main` está protegida y cada PR necesita una revisión y que pase el CI. Lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de empezar.
 
 ## Autores
-
+Mónica Anzola Valero de Bernabé
+Cristina Colunga Martínez
 <!-- Rellenar a mano: nombre completo y usuario de GitHub de cada integrante. -->
 
 - 
