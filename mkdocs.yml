@@ -1,4 +1,5 @@
 site_name: hex-arena
+site_url: https://hex-arena-cunef.readthedocs.io/es/latest/
 site_description: Motor de Hex en Python, plataforma de bots y torneo automático.
 repo_url: https://github.com/monianzola/HEX
 repo_name: monianzola/HEX
