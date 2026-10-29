@@ -116,6 +116,7 @@ Guía completa: **[Tutorial: sube tu primer bot](https://hex-arena-cunef.readthe
 | `RandomBot` | `random` | Jugada legal al azar. Sirve de referencia mínima. |
 | `ShortestPathBot` | `shortest-path` | Para cada jugada calcula con 0-1 BFS cuántas fichas le faltan a cada jugador, y maximiza *distancia del rival − distancia propia*. |
 | `AlphaBetaBot` | `alpha-beta` | Minimax con poda alfa-beta y profundización iterativa (80 % del tiempo), 20 candidatos por nodo ordenados por cercanía a los caminos más cortos. Gana el 85 % de las partidas a `ShortestPathBot`. |
+| `MCTSBot` | `mcts` | Monte Carlo Tree Search (UCT, c = √2): ~9 000 simulaciones por jugada en 7×7 rellenando el tablero al azar. Gana el 80 % a `ShortestPathBot` y empata con `AlphaBetaBot` (45 %). |
 
 ## Torneo
 
@@ -127,6 +128,13 @@ python -m hexarena.tournament --bots random shortest-path --games 4 --size 5
 ```
 
 Cada bot se ejecuta en **su propio proceso**: si lanza una excepción, se pasa de tiempo, se cuelga o juega ilegalmente, **pierde esa partida** y el torneo continúa. GitHub Actions lo ejecuta en cada push a `main`, cada lunes y a mano, y publica la [clasificación](https://monianzola.github.io/HEX/) en GitHub Pages.
+
+Para enfrentar a todos los bots entre sí y ver la tabla de enfrentamientos directos:
+
+```bash
+python scripts/compare_bots.py                    # 7x7, 20 partidas por pareja, 1 s por jugada
+python scripts/compare_bots.py --games 6 --time-limit 0.5
+```
 
 ## Estructura del repositorio
 

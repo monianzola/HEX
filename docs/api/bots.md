@@ -49,3 +49,7 @@ El [tutorial](../tutorial-bot.md) explica el proceso completo paso a paso.
 ::: hexarena.bots.alpha_beta.AlphaBetaBot
 
 ::: hexarena.bots.alpha_beta.AlphaBetaSearch
+
+::: hexarena.bots.mcts.MCTSBot
+
+::: hexarena.bots.mcts.ucb1
