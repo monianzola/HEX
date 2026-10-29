@@ -1,0 +1,76 @@
+name: Tournament
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Every Monday at 06:00 UTC.
+
+# Minimum permissions needed to publish to GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deployments at once; let a running one finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  tournament:
+    name: Run tournament
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install hexarena
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Play the round-robin tournament
+        # Official settings: 7x7 board, 20 games per pair, 1 s per move, fixed seed.
+        run: python -m hexarena.tournament --size 7 --games 20 --time-limit 1.0 --seed 2026 --output public
+
+      - name: Write the leaderboard to the job summary
+        run: |
+          python - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          data = json.load(open("public/results.json", encoding="utf-8"))
+          print(f"## Clasificación ({data['generated_at']}, commit `{data['commit'][:7]}`)\n")
+          print("| # | Bot | Elo | V | D | % |")
+          print("|---|---|---|---|---|---|")
+          for s in data["standings"]:
+              print(f"| {s['rank']} | {s['name']} | {s['elo']:.0f} | {s['wins']} | {s['losses']} | {s['win_rate']:.0%} |")
+          EOF
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the leaderboard
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: tournament
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
