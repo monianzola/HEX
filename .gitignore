@@ -60,3 +60,6 @@ results/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Tournament output published by CI
+public/

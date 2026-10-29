@@ -11,14 +11,14 @@ Motor del juego **Hex** en Python, plataforma abierta de bots y torneo automáti
 |---|---|
 | ▶️ **Jugar en la web** | _Próximamente_ (Streamlit Community Cloud) |
 | 📖 **Documentación** | [hex-arena-cunef.readthedocs.io](https://hex-arena-cunef.readthedocs.io/es/latest/) |
-| 🏆 **Clasificación del torneo** | _Próximamente_ (GitHub Pages) |
+| 🏆 **Clasificación del torneo** | [monianzola.github.io/HEX](https://monianzola.github.io/HEX/) (GitHub Pages, se actualiza sola) |
 
 ## Qué incluye
 
 - **Librería `hexarena`**: las reglas de Hex, instalable con `pip` y jugable desde código sin interfaz. Sin dependencias externas.
 - **Interfaz web** con Streamlit: juegas con Rojo contra el bot que elijas, sobre un tablero hexagonal clicable.
 - **Plataforma de bots**: cualquiera puede añadir un bot creando **un único archivo**. Unos tests automáticos validan cualquier bot nuevo.
-- **Torneo automático** round-robin entre todos los bots, con clasificación Elo. _(En desarrollo.)_
+- **Torneo automático** round-robin entre todos los bots, con clasificación Elo publicada automáticamente.
 
 ## Reglas de Hex
 
@@ -116,6 +116,17 @@ Guía completa: **[Tutorial: sube tu primer bot](https://hex-arena-cunef.readthe
 | `RandomBot` | `random` | Jugada legal al azar. Sirve de referencia mínima. |
 | `ShortestPathBot` | `shortest-path` | Para cada jugada calcula con 0-1 BFS cuántas fichas le faltan a cada jugador, y maximiza *distancia del rival − distancia propia*. |
 
+## Torneo
+
+Todos los bots registrados se enfrentan entre sí (round-robin) en tablero **7×7**, **20 partidas por pareja** (10 con cada color), **1 segundo por movimiento** y semilla fija. La clasificación usa **Elo** (inicial 1000, K = 32).
+
+```bash
+python -m hexarena.tournament                       # torneo oficial -> results/index.html
+python -m hexarena.tournament --bots random shortest-path --games 4 --size 5
+```
+
+Cada bot se ejecuta en **su propio proceso**: si lanza una excepción, se pasa de tiempo, se cuelga o juega ilegalmente, **pierde esa partida** y el torneo continúa. GitHub Actions lo ejecuta en cada push a `main`, cada lunes y a mano, y publica la [clasificación](https://monianzola.github.io/HEX/) en GitHub Pages.
+
 ## Estructura del repositorio
 
 ```
@@ -123,7 +134,7 @@ HEX/
 ├── src/hexarena/
 │   ├── game/          # Reglas, estado inmutable, detección de victoria, play_game
 │   ├── bots/          # API pública (Bot, registro) y un archivo por bot
-│   └── tournament/    # Torneo round-robin y ranking Elo (en desarrollo)
+│   └── tournament/    # Torneo round-robin robusto, ranking Elo y página de clasificación
 ├── app/               # Interfaz web Streamlit (app.py) y dibujo del tablero
 ├── tests/             # Tests con pytest
 ├── docs/              # Documentación MkDocs (publicada en ReadTheDocs)

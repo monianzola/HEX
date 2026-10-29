@@ -2,8 +2,8 @@
 
 hex-arena enfrenta automáticamente a **todos los bots del repositorio** y publica una clasificación.
 
-!!! info "En desarrollo"
-    El módulo de torneo (`hexarena.tournament`) y la publicación automática de la clasificación se están implementando. Esta página describe su funcionamiento previsto.
+!!! success "Clasificación actual"
+    👉 **[monianzola.github.io/HEX](https://monianzola.github.io/HEX/)**: se regenera sola en cada cambio de `main` y cada lunes.
 
 ## Formato
 
@@ -37,13 +37,35 @@ Cada movimiento se ejecuta con un límite de tiempo y aislado del resto. Un bot 
 - tarda más del tiempo permitido o se queda colgado;
 - devuelve un movimiento ilegal.
 
+Cada bot vive en **su propio proceso** y recibe las peticiones por una tubería (`multiprocessing.Pipe`). El torneo espera cada respuesta como máximo `time_limit + 0,5 s`; si no llega, **mata el proceso** y lo vuelve a arrancar para la siguiente partida. Así, ni un bucle infinito ni un `os._exit()` pueden detener el torneo.
+
+| Motivo registrado | Qué pasó |
+|---|---|
+| `connection` | Victoria normal: el ganador conectó sus bordes |
+| `exception` | El bot lanzó una excepción (o no se pudo cargar/crear) |
+| `timeout` | No respondió a tiempo |
+| `illegal` | Devolvió una jugada ilegal o algo que no es una tupla `(fila, columna)` |
+| `crash` | Su proceso murió |
+
 ## Ejecutarlo en local
 
 ```bash
-python -m hexarena.tournament
+python -m hexarena.tournament                      # configuración oficial
+python -m hexarena.tournament --bots random shortest-path --size 5 --games 4 --time-limit 0.5
+python -m hexarena.tournament --help               # todas las opciones
 ```
 
-Genera los resultados en JSON y una página HTML con la tabla de clasificación.
+Genera `results/results.json` (resultados completos, partida a partida) y `results/index.html` (la página de clasificación). También se pueden incluir bots que no están registrados con su ruta de importación: `--bots random mi_paquete.mi_modulo:MiBot`.
+
+## Referencia del API
+
+::: hexarena.tournament.runner.run_tournament
+
+::: hexarena.tournament.runner.TournamentConfig
+
+::: hexarena.tournament.runner.GameRecord
+
+::: hexarena.tournament.elo.update_elo
 
 ## Publicación automática
 
