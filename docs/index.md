@@ -35,5 +35,7 @@ print(game.render_ascii(result.final_state))
 
 ## Enlaces
 
+- ▶️ Jugar en la web: [hex-arena-cunef.streamlit.app](https://hex-arena-cunef.streamlit.app)
+- 🏆 Clasificación del torneo: [monianzola.github.io/HEX](https://monianzola.github.io/HEX/)
 - Código fuente: [github.com/monianzola/HEX](https://github.com/monianzola/HEX)
 - Licencia: MIT
