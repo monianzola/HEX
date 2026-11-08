@@ -17,11 +17,11 @@ from streamlit.errors import StreamlitAPIException
 from streamlit_image_coordinates import streamlit_image_coordinates
 
 APP_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(APP_DIR))  # So ``board_render`` imports on Streamlit Cloud.
-try:
-    import hexarena  # noqa: F401
-except ImportError:  # Allow running from a clone without ``pip install``.
-    sys.path.insert(0, str(APP_DIR.parent / "src"))
+# Always use the hexarena code of THIS checkout, never an older installed
+# copy: Streamlit Cloud only reinstalls requirements when requirements.txt
+# changes, so a copy installed at first deploy would hide new bots.
+sys.path.insert(0, str(APP_DIR.parent / "src"))
+sys.path.insert(0, str(APP_DIR))  # So ``board_render`` and ``game_controller`` import.
 
 from board_render import draw_board, geometry, pixel_to_cell  # noqa: E402
 from game_controller import COLOUR_NAMES, HUMAN, Match  # noqa: E402
