@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "app"))
 from game_controller import HUMAN, Match  # noqa: E402
 
 from hexarena.bots import Bot, Move, Observation, register_bot, unregister_bot  # noqa: E402
-from hexarena.game import BLUE, RED  # noqa: E402
+from hexarena.game import BLUE, EMPTY, RED  # noqa: E402
 
 
 @pytest.fixture
@@ -68,13 +68,20 @@ def test_bot_against_bot_plays_a_full_game() -> None:
     assert match.player_name(RED) == "ShortestPathBot"
 
 
+def first_free_cell(match: Match) -> tuple[int, int]:
+    """Any empty cell (the bot's replies are random, so fixed cells may be taken)."""
+    return next(
+        (r, c) for r, row in enumerate(match.state.board) for c, value in enumerate(row) if value == EMPTY
+    )
+
+
 def test_undo_takes_back_the_human_move_and_the_bot_reply() -> None:
     match = Match(size=5, players={RED: HUMAN, BLUE: "random"})
     assert not match.can_undo()
-    match.play_human((2, 2))
-    match.play_bot()
-    match.play_human((1, 1))
-    match.play_bot()
+    assert match.play_human((2, 2)) is None
+    assert match.play_bot() is not None
+    assert match.play_human(first_free_cell(match)) is None
+    assert match.play_bot() is not None
     match.undo()
     assert match.moves[0] == (2, 2) and len(match.moves) == 2
     assert match.is_human_turn()
