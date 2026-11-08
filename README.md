@@ -16,7 +16,7 @@ Motor del juego **Hex** en Python, plataforma abierta de bots y torneo automáti
 ## Qué incluye
 
 - **Librería `hexarena`**: las reglas de Hex, instalable con `pip` y jugable desde código sin interfaz. Sin dependencias externas.
-- **Interfaz web** con Streamlit: juegas con Rojo contra el bot que elijas, sobre un tablero hexagonal clicable.
+- **Interfaz web** con Streamlit: juega con cualquier color contra el bot que elijas, o mira partidas entre bots, sobre un tablero hexagonal clicable.
 - **Plataforma de bots**: cualquiera puede añadir un bot creando **un único archivo**. Unos tests automáticos validan cualquier bot nuevo.
 - **Torneo automático** round-robin entre todos los bots, con clasificación Elo publicada automáticamente.
 
@@ -83,7 +83,11 @@ pip install -e ".[web]"
 streamlit run app/app.py
 ```
 
-Se abre el navegador en `http://localhost:8501`. Tú juegas con Rojo y empiezas. Puedes elegir el tamaño del tablero (5–11) y el bot rival.
+Se abre el navegador en `http://localhost:8501`. Opciones:
+
+- **Humano contra bot**: juegas con 🔴 Rojo (empiezas) o con 🔵 Azul (empieza el bot), contra el bot que elijas, y puedes **deshacer** tu última jugada.
+- **Bot contra bot**: eliges los dos bots y ves la partida **jugada a jugada** o en **modo automático**.
+- Tamaño del tablero (5–11) y **tiempo de pensar de los bots** (0,1–1 s): con menos tiempo responden más rápido, con más juegan mejor.
 
 ## Crear tu propio bot
 
