@@ -79,7 +79,7 @@ class AlphaBetaSearch:
         if rival == 0:
             return -(WIN_SCORE + depth)
         if depth == 0:
-            return rival - own
+            return self.evaluate_leaf(board, to_move, own, rival)
 
         best = -math.inf
         for move in self.ordered_moves(board, to_move):
@@ -91,6 +91,15 @@ class AlphaBetaSearch:
             if alpha >= beta:
                 break  # Beta cut-off: the opponent will never allow this line.
         return best
+
+    def evaluate_leaf(self, board: Board, to_move: int, own: float, rival: float) -> float:
+        """Value of a non-terminal leaf for ``to_move``: ``rival - own``.
+
+        ``own`` and ``rival`` are the shortest-path distances, already
+        computed by :meth:`negamax`. Subclasses can override this method
+        to use a different heuristic with the same search.
+        """
+        return rival - own
 
     def search_root(self, board: Board, player: int, moves: list[Move], depth: int) -> tuple[Move, float]:
         """Best of ``moves`` for ``player`` at ``depth`` plies, and its value."""
@@ -125,6 +134,9 @@ class AlphaBetaBot(Bot):
     author = "hex-arena team"
     description = "Minimax con poda alfa-beta y profundización iterativa sobre la heurística de caminos."
 
+    search_class: type[AlphaBetaSearch] = AlphaBetaSearch
+    """Search used by :meth:`choose_move` (subclasses can change the heuristic)."""
+
     def __init__(self, max_candidates: int = MAX_CANDIDATES, max_depth: int | None = None) -> None:
         self.max_candidates = max_candidates
         self.max_depth = max_depth
@@ -154,7 +166,7 @@ class AlphaBetaBot(Bot):
         candidates = [move for _, _, move in scored[: self.max_candidates]]
         best = candidates[0]
 
-        search = AlphaBetaSearch(self.max_candidates, deadline)
+        search = self.search_class(self.max_candidates, deadline)
         max_depth = min(self.max_depth or len(legal), len(legal))
         for depth in range(1, max_depth + 1):
             try:

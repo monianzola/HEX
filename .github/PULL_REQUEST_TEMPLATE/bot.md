@@ -6,7 +6,7 @@
 
 ## Algoritmo
 
-<!-- Explica cómo elige la jugada: heurística, búsqueda (minimax, alfa-beta, MCTS...),
+<!-- Explica cómo elige la jugada: heurística, búsqueda (greedy, minimax, alfa-beta...),
      cómo gestiona el tiempo y por qué crees que funciona. -->
 
 ## Rendimiento

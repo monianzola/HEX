@@ -108,7 +108,7 @@ python -m hexarena.check mi-bot      # el nombre de @register_bot("...")
 | `RandomBot` | `random` | Jugada legal al azar. Sirve de referencia mínima. |
 | `ShortestPathBot` | `shortest-path` | Para cada jugada calcula con 0-1 BFS cuántas fichas le faltan a cada jugador, y maximiza *distancia del rival − distancia propia*. |
 | `AlphaBetaBot` | `alpha-beta` | Minimax con poda alfa-beta y profundización iterativa (80 % del tiempo), 20 candidatos por nodo ordenados por cercanía a los caminos más cortos. Gana el 85 % de las partidas a `ShortestPathBot`. |
-| `MCTSBot` | `mcts` | Monte Carlo Tree Search (UCT, c = √2): ~9 000 simulaciones por jugada en 7×7 rellenando el tablero al azar. Gana el 80 % a `ShortestPathBot` y empata con `AlphaBetaBot` (45 %). |
+| `BridgeBot` | `bridges` | La misma búsqueda alfa-beta que `AlphaBetaBot`, pero su heurística entiende los **puentes** (dos casillas con dos vecinas comunes libres, que el rival no puede cortar): el camino más corto puede saltar por un puente como si fuesen casillas vecinas. Gana el 64 % a `AlphaBetaBot` en 7×7 y el 67 % en 9×9 (aperturas aleatorias, ambos colores). |
 
 ## Torneo
 
