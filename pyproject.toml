@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "hex-arena contributors" }]
-keywords = ["hex", "game", "ai", "bots", "mcts", "alpha-beta", "tournament"]
+keywords = ["hex", "game", "ai", "bots", "alpha-beta", "tournament"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

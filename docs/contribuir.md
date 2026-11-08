@@ -13,7 +13,7 @@
 
     | Prefijo | Uso | Ejemplo |
     |---|---|---|
-    | `feat` | Funcionalidad nueva | `feat(bots): add MCTSBot` |
+    | `feat` | Funcionalidad nueva | `feat(bots): add BridgeBot` |
     | `fix` | Corrección de un error | `fix(game): reject boolean coordinates` |
     | `test` | Tests | `test(game): cover 1x1 board` |
     | `docs` | Documentación | `docs: add bot tutorial` |

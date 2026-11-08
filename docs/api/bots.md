@@ -50,6 +50,10 @@ El [tutorial](../tutorial-bot.md) explica el proceso completo paso a paso.
 
 ::: hexarena.bots.alpha_beta.AlphaBetaSearch
 
-::: hexarena.bots.mcts.MCTSBot
+::: hexarena.bots.bridges.BridgeBot
 
-::: hexarena.bots.mcts.ucb1
+::: hexarena.bots.bridges.BridgeSearch
+
+::: hexarena.bots.bridges.bridge_distance
+
+::: hexarena.bots.bridges.bridge_jumps

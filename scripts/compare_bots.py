@@ -9,11 +9,11 @@ Usage::
 
     python scripts/compare_bots.py
     python scripts/compare_bots.py --games 10 --time-limit 0.5
-    python scripts/compare_bots.py --bots mcts alpha-beta
+    python scripts/compare_bots.py --bots bridges alpha-beta
 
-Note: AlphaBetaBot and ShortestPathBot are deterministic, so between the
-two of them only two different games exist (one per colour); the 20 games
-repeat them. MCTSBot and RandomBot receive a different seed every game.
+Note: BridgeBot, AlphaBetaBot and ShortestPathBot are deterministic, so
+between two of them only two different games exist (one per colour); the
+20 games repeat them. Only RandomBot receives a different seed every game.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import sys
 
 from hexarena.tournament import TournamentConfig, run_tournament
 
-DEFAULT_BOTS = ["mcts", "alpha-beta", "shortest-path", "random"]
+DEFAULT_BOTS = ["bridges", "alpha-beta", "shortest-path", "random"]
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -40,7 +40,7 @@ git switch -c feature/descripcion-corta
 
 | Tipo | Uso | Ejemplo |
 |---|---|---|
-| `feat` | Funcionalidad nueva | `feat(bots): add MCTSBot` |
+| `feat` | Funcionalidad nueva | `feat(bots): add BridgeBot` |
 | `fix` | Corrección | `fix(game): reject boolean coordinates` |
 | `test` | Tests | `test(game): cover 1x1 board` |
 | `docs` | Documentación | `docs: add bot tutorial` |
