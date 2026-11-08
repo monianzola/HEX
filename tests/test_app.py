@@ -171,3 +171,37 @@ def test_bot_vs_bot_autoplay_finishes_the_game() -> None:
     assert match(at).finished
     assert at.session_state["autoplay"] is False
     assert any("Gana" in m.value for m in at.success)
+
+
+def test_app_ignores_an_old_installed_copy_of_hexarena(tmp_path: Path) -> None:
+    """Regression: Streamlit Cloud kept an old installed copy (with MCTSBot).
+
+    Put a stale copy of the package first on ``sys.path`` (without BridgeBot)
+    and check that the app still loads the repository's ``src/`` code.
+    """
+    import shutil
+    import subprocess
+
+    repo = Path(__file__).resolve().parents[1]
+    stale = tmp_path / "site-packages"
+    shutil.copytree(repo / "src" / "hexarena", stale / "hexarena")
+    (stale / "hexarena" / "bots" / "bridges.py").unlink()
+    script = "\n".join(
+        [
+            "import sys",
+            f"sys.path.insert(0, {str(stale)!r})",
+            "from streamlit.testing.v1 import AppTest",
+            f"at = AppTest.from_file({APP_PATH!r}, default_timeout=60)",
+            "at.run()",
+            "assert not at.exception, at.exception",
+            "import hexarena",
+            "from hexarena.bots import available_bots",
+            "print(hexarena.__file__)",
+            "print(','.join(available_bots()))",
+        ]
+    )
+    out = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True, timeout=120)
+    assert out.returncode == 0, out.stderr
+    module_file, bots = out.stdout.strip().splitlines()[-2:]
+    assert Path(module_file).resolve().is_relative_to((repo / "src").resolve())
+    assert "bridges" in bots.split(",")
