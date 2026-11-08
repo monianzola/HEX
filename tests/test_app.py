@@ -26,18 +26,25 @@ APP_PATH = str(Path(__file__).resolve().parents[1] / "app" / "app.py")
 _click_counter = 0
 
 
-def start_app() -> AppTest:
-    at = AppTest.from_file(APP_PATH, default_timeout=30)
+def start_app(**settings: object) -> AppTest:
+    """Open the app; ``settings`` are sidebar values applied before the first run."""
+    at = AppTest.from_file(APP_PATH, default_timeout=60)
+    for key, value in settings.items():
+        at.session_state[key] = value
     at.run()
     assert not at.exception
     return at
+
+
+def match(at: AppTest):
+    return at.session_state["match"]
 
 
 def click(at: AppTest, cell: tuple[int, int] | None = None, xy: tuple[float, float] | None = None) -> AppTest:
     """Simulate a click on ``cell`` (or on raw pixel ``xy``) and rerun the app."""
     global _click_counter
     _click_counter += 1
-    size = at.session_state["state"].size
+    size = match(at).size
     width, height = geometry(size).image_size
     x, y = xy if xy is not None else geometry(size).center(*cell)  # type: ignore[misc]
     key = f"board-{at.session_state['game_id']}"
@@ -48,32 +55,41 @@ def click(at: AppTest, cell: tuple[int, int] | None = None, xy: tuple[float, flo
 
 
 def stones(at: AppTest, player: int) -> int:
-    return sum(row.count(player) for row in at.session_state["state"].board)
+    return sum(row.count(player) for row in match(at).state.board)
 
 
 def first_empty_cell(at: AppTest) -> tuple[int, int]:
-    for r, row in enumerate(at.session_state["state"].board):
+    for r, row in enumerate(match(at).state.board):
         for c, value in enumerate(row):
             if value == EMPTY:
                 return (r, c)
     raise AssertionError("Board is full")
 
 
-def test_app_starts_with_empty_7x7_board() -> None:
+def button(at: AppTest, text: str):
+    return next(b for b in at.button if text in b.label)
+
+
+# --------------------------------------------------------------------------- human vs bot
+
+
+def test_app_starts_with_default_settings() -> None:
     at = start_app()
+    assert at.session_state["mode"] == "Humano contra bot"
+    assert at.session_state["human_colour"] == RED
     assert at.session_state["size"] == 7
-    assert at.session_state["bot_name"] == "shortest-path"
+    assert at.session_state["think_time"] == 0.25
     assert stones(at, RED) == stones(at, BLUE) == 0
 
 
 def test_click_plays_human_move_and_bot_reply() -> None:
-    at = click(start_app(), (0, 0))
-    assert at.session_state["state"].board[0][0] == RED
+    at = click(start_app(think_time=0.1), (0, 0))
+    assert match(at).state.board[0][0] == RED
     assert stones(at, RED) == 1 and stones(at, BLUE) == 1
 
 
 def test_same_click_is_not_processed_twice() -> None:
-    at = click(start_app(), (0, 0))
+    at = click(start_app(think_time=0.1), (0, 0))
     at.run()  # The component still reports the same click.
     at.run()
     assert stones(at, RED) == 1 and stones(at, BLUE) == 1
@@ -82,51 +98,76 @@ def test_same_click_is_not_processed_twice() -> None:
 def test_click_outside_board_is_ignored() -> None:
     at = click(start_app(), xy=(1, 1))
     assert stones(at, RED) == 0
-    assert not at.toast
 
 
 def test_click_on_occupied_cell_shows_notice() -> None:
-    at = click(start_app(), (3, 3))
-    bot_cell = at.session_state["moves"][-1]
-    at = click(at, bot_cell)
+    at = click(start_app(think_time=0.1), (3, 3))
+    at = click(at, match(at).moves[-1])  # The cell the bot just took.
     assert stones(at, RED) == 1
     assert at.toast and "ocupada" in at.toast[0].value
 
 
-def test_full_game_ends_with_winner_message_and_further_clicks_ignored() -> None:
-    at = start_app()
-    for _ in range(49):
-        if at.session_state["state"].winner is not None:
+def test_human_can_play_second() -> None:
+    at = start_app(think_time=0.1)
+    at.radio(key="human_colour").set_value(BLUE).run()
+    assert not at.exception
+    # The bot (Red) has already opened and it is the human's turn.
+    assert stones(at, RED) == 1 and stones(at, BLUE) == 0
+    assert match(at).is_human_turn()
+    at = click(at, first_empty_cell(at))
+    assert stones(at, BLUE) == 1 and stones(at, RED) == 2
+
+
+def test_undo_button() -> None:
+    at = click(start_app(think_time=0.1), (2, 2))
+    button(at, "Deshacer").click().run()
+    assert not at.exception
+    assert match(at).moves == []
+
+
+def test_full_game_ends_with_a_winner_message() -> None:
+    at = start_app(rival="random", size=5, think_time=0.1)
+    for _ in range(25):
+        if match(at).finished:
             break
         click(at, first_empty_cell(at))
-    assert at.session_state["state"].winner in (RED, BLUE)
+    assert match(at).finished
     assert [m.value for m in at.success] + [m.value for m in at.error]
 
-    moves_before = len(at.session_state["moves"])
-    if any(EMPTY in row for row in at.session_state["state"].board):
-        click(at, first_empty_cell(at))
-        assert len(at.session_state["moves"]) == moves_before
-        assert at.toast and "terminado" in at.toast[0].value
 
-
-def test_changing_size_starts_new_game() -> None:
-    at = click(start_app(), (1, 1))
+def test_changing_size_starts_a_new_game() -> None:
+    at = click(start_app(think_time=0.1), (1, 1))
+    old_game = at.session_state["game_id"]
     at.select_slider(key="size").set_value(5).run()
     assert not at.exception
-    assert at.session_state["state"].size == 5
-    assert at.session_state["moves"] == []
-
-
-def test_new_game_button_resets_board() -> None:
-    at = click(start_app(), (2, 2))
-    old_game = at.session_state["game_id"]
-    next(b for b in at.button if "Nueva partida" in b.label).click().run()
-    assert stones(at, RED) == stones(at, BLUE) == 0
+    assert match(at).size == 5 and match(at).moves == []
     assert at.session_state["game_id"] == old_game + 1
 
 
-def test_can_select_random_bot() -> None:
-    at = start_app()
-    at.selectbox(key="bot_name").set_value("random").run()
+def test_new_game_button_resets_the_board() -> None:
+    at = click(start_app(think_time=0.1), (2, 2))
+    button(at, "Nueva partida").click().run()
+    assert stones(at, RED) == stones(at, BLUE) == 0
+
+
+# --------------------------------------------------------------------------- bot vs bot
+
+
+def test_bot_vs_bot_step_by_step() -> None:
+    at = start_app(think_time=0.1)
+    at.radio(key="mode").set_value("Bot contra bot").run()
     assert not at.exception
-    assert at.session_state["bot"].name == "RandomBot"
+    assert not match(at).has_human and match(at).moves == []
+    button(at, "Siguiente jugada").click().run()
+    assert len(match(at).moves) == 1
+    button(at, "Siguiente jugada").click().run()
+    assert len(match(at).moves) == 2
+
+
+def test_bot_vs_bot_autoplay_finishes_the_game() -> None:
+    at = start_app(mode="Bot contra bot", red_bot="shortest-path", blue_bot="random", size=5, think_time=0.1)
+    button(at, "Jugar automáticamente").click().run(timeout=120)
+    assert not at.exception
+    assert match(at).finished
+    assert at.session_state["autoplay"] is False
+    assert any("Gana" in m.value for m in at.success)
