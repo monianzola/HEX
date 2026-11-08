@@ -62,3 +62,14 @@ class BrokenInitBot(Bot):
 
     def choose_move(self, observation: Observation) -> Move:  # pragma: no cover
         return observation.legal_moves[0]
+
+
+class SlowBot(Bot):
+    name = "SlowBot"
+    description = "Legal moves, but always too slow."
+
+    def choose_move(self, observation: Observation) -> Move:
+        import time
+
+        time.sleep(observation.time_limit * 3)
+        return observation.legal_moves[0]
