@@ -16,7 +16,7 @@ Motor del juego **Hex** en Python, plataforma abierta de bots y torneo automáti
 ## Qué incluye
 
 - **Librería `hexarena`**: las reglas de Hex, instalable con `pip` y jugable desde código sin interfaz. Sin dependencias externas.
-- **Interfaz web** con Streamlit: juegas con Rojo contra el bot que elijas, sobre un tablero hexagonal clicable.
+- **Interfaz web** con Streamlit: juega con cualquier color contra el bot que elijas, o mira partidas entre bots, sobre un tablero hexagonal clicable.
 - **Plataforma de bots**: cualquiera puede añadir un bot creando **un único archivo**. Unos tests automáticos validan cualquier bot nuevo.
 - **Torneo automático** round-robin entre todos los bots, con clasificación Elo publicada automáticamente.
 
@@ -83,35 +83,23 @@ pip install -e ".[web]"
 streamlit run app/app.py
 ```
 
-Se abre el navegador en `http://localhost:8501`. Tú juegas con Rojo y empiezas. Puedes elegir el tamaño del tablero (5–11) y el bot rival.
+Se abre el navegador en `http://localhost:8501`. Opciones:
+
+- **Humano contra bot**: juegas con 🔴 Rojo (empiezas) o con 🔵 Azul (empieza el bot), contra el bot que elijas, y puedes **deshacer** tu última jugada.
+- **Bot contra bot**: eliges los dos bots y ves la partida **jugada a jugada** o en **modo automático**.
+- Tamaño del tablero (5–11) y **tiempo de pensar de los bots** (0,1–1 s): con menos tiempo responden más rápido, con más juegan mejor.
 
 ## Crear tu propio bot
 
-Crea **un solo archivo** en `src/hexarena/bots/`. El registro lo descubre automáticamente: no hace falta tocar nada más.
+**¿Quieres enviarnos un bot?** Solo tienes que crear **un archivo de Python** en `src/hexarena/bots/`; no hace falta tocar el juego. Puedes hacerlo **desde el navegador, sin instalar nada**: fork → *Add file* → pegar la plantilla → *pull request*. Nuestro CI comprueba tu bot automáticamente.
 
-```python
-# src/hexarena/bots/center_bot.py
-from hexarena.bots import Bot, Move, Observation, register_bot
-from hexarena.bots.heuristics import center_distance
+👉 **[Tutorial paso a paso: sube tu primer bot](https://hex-arena-cunef.readthedocs.io/es/latest/tutorial-bot/)**
 
-
-@register_bot("center")
-class CenterBot(Bot):
-    name = "CenterBot"
-    author = "Tu nombre"
-    description = "Juega la casilla libre más cercana al centro."
-
-    def choose_move(self, observation: Observation) -> Move:
-        return min(observation.legal_moves, key=lambda m: center_distance(m, observation.size))
-```
-
-Valídalo con los tests de contrato, que se aplican solos a todos los bots registrados:
+Punto de partida: la plantilla [`src/hexarena/bots/_plantilla.py`](src/hexarena/bots/_plantilla.py), un bot *greedy* que ya funciona. Si trabajas en local, compruébalo antes de enviarlo:
 
 ```bash
-pytest tests/test_bots_contract.py -k center
+python -m hexarena.check mi-bot      # el nombre de @register_bot("...")
 ```
-
-Guía completa: **[Tutorial: sube tu primer bot](https://hex-arena-cunef.readthedocs.io/es/latest/tutorial-bot/)**.
 
 ## Bots incluidos
 

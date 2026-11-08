@@ -68,11 +68,11 @@ En GitHub, pulsa **Compare & pull request** y rellena la plantilla. Si es un bot
 
 ## Añadir un bot
 
-Sigue el [tutorial](https://hex-arena-cunef.readthedocs.io/es/latest/tutorial-bot/). Requisitos:
+Sigue el [tutorial](https://hex-arena-cunef.readthedocs.io/es/latest/tutorial-bot/): se puede hacer **desde el navegador, sin instalar nada**. Parte de la plantilla `src/hexarena/bots/_plantilla.py` y, si trabajas en local, compruébalo con `python -m hexarena.check <nombre-del-bot>`. Requisitos:
 
 - **Un único archivo** en `src/hexarena/bots/`, registrado con `@register_bot("nombre-unico")`.
 - Se puede crear sin argumentos y tiene `name` y `description`.
-- Pasa los tests de contrato: `pytest tests/test_bots_contract.py -k nombre-unico`.
+- Pasa los tests de contrato (`python -m hexarena.check nombre-unico`, o `pytest tests/test_bots_contract.py -k nombre-unico`).
 - Responde dentro de `observation.time_limit`.
 - **No** accede a la red ni a archivos, **no** lanza procesos y **no** modifica nada fuera de sí mismo.
 - Es claramente mejor que `RandomBot`.
