@@ -229,3 +229,74 @@ def test_worker_stops_when_the_pipe_closes() -> None:
     parent.close()
     thread.join(timeout=5)
     assert not thread.is_alive()
+
+
+# --------------------------------------------------------------------------- openings and Elo order
+
+
+def test_each_opening_is_played_with_both_colours() -> None:
+    config = TournamentConfig(board_size=5, games_per_pair=6, time_limit=0.2, seed=3)
+    result = run_tournament(["random", "shortest-path"], config)
+    games = result.games
+    for first, second in zip(games[0::2], games[1::2]):
+        assert len(first.opening) == 2
+        assert first.opening == second.opening
+        assert (first.red, first.blue) == (second.blue, second.red)
+    openings = {g.opening for g in games}
+    assert len(openings) == 3  # Three different openings for six games.
+
+
+def test_deterministic_bots_no_longer_repeat_the_same_game() -> None:
+    """Without openings, two deterministic bots replay one game per colour forever."""
+    config = TournamentConfig(board_size=5, games_per_pair=8, time_limit=0.1, seed=5)
+    result = run_tournament(["shortest-path", "alpha-beta"], config)
+    as_red = [(g.opening, g.moves) for g in result.games if g.red == "shortest-path"]
+    assert len(set(as_red)) > 1
+
+
+def test_no_opening_when_disabled() -> None:
+    config = TournamentConfig(board_size=5, games_per_pair=2, time_limit=0.2, seed=3, opening_moves=0)
+    result = run_tournament(["random", "shortest-path"], config)
+    assert all(g.opening == () for g in result.games)
+
+
+def test_opening_never_ends_the_game_on_tiny_boards() -> None:
+    import random
+
+    from hexarena.game import HexGame
+    from hexarena.tournament.runner import random_opening
+
+    state, moves = random_opening(HexGame(1), 2, random.Random(0))
+    assert moves == () and not HexGame(1).is_terminal(state)
+
+
+def test_elo_does_not_depend_on_the_order_of_the_games() -> None:
+    import random
+
+    entrants = [Entrant("a", "A"), Entrant("b", "B"), Entrant("c", "C")]
+    records = [
+        _record(i, *pair) for i, pair in enumerate([("a", "b"), ("b", "a"), ("a", "c"), ("c", "b"), ("b", "c")])
+    ]
+    shuffled = records[:]
+    random.Random(1).shuffle(shuffled)
+    first = {s.bot: s.elo for s in compute_standings(entrants, records, TournamentConfig())}
+    second = {s.bot: s.elo for s in compute_standings(entrants, shuffled, TournamentConfig())}
+    assert first == pytest.approx(second)
+
+
+def test_equal_records_get_equal_elo() -> None:
+    """Two bots with the same results against each other end with the same Elo."""
+    entrants = [Entrant("a", "A"), Entrant("b", "B")]
+    records = [_record(i, *(("a", "b") if i % 2 == 0 else ("b", "a"))) for i in range(20)]
+    config = TournamentConfig(elo_orders=400)
+    a, b = compute_standings(entrants, records, config)
+    assert a.elo == pytest.approx(b.elo, abs=3)
+
+
+def test_cli_accepts_opening_moves(tmp_path) -> None:
+    code = main(["--bots", "random", "shortest-path", "--size", "5", "--games", "2",
+                 "--time-limit", "0.2", "--opening-moves", "0", "--output", str(tmp_path)])
+    assert code == 0
+    data = json.loads((tmp_path / "results.json").read_text(encoding="utf-8"))
+    assert data["config"]["opening_moves"] == 0
+    assert main(["--opening-moves", "-1", "--output", str(tmp_path)]) == 2

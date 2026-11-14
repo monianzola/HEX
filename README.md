@@ -112,7 +112,7 @@ python -m hexarena.check mi-bot      # el nombre de @register_bot("...")
 
 ## Torneo
 
-Todos los bots registrados se enfrentan entre sí (round-robin) en tablero **7×7**, **20 partidas por pareja** (10 con cada color), **1 segundo por movimiento** y semilla fija. La clasificación usa **Elo** (inicial 1000, K = 32).
+Todos los bots registrados se enfrentan entre sí (round-robin) en tablero **7×7**, **20 partidas por pareja**, **1 segundo por movimiento** y semilla fija. Cada partida empieza con **2 fichas al azar** y cada apertura se juega **con ambos colores**, para que los bots deterministas no repitan siempre la misma partida. La clasificación usa **Elo** (inicial 1000, K = 32), promediado sobre 100 órdenes de las partidas para que no dependa del orden.
 
 ```bash
 python -m hexarena.tournament                       # torneo oficial -> results/index.html

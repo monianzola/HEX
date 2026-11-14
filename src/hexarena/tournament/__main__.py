@@ -24,6 +24,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--time-limit", type=float, default=defaults.time_limit,
                         help="seconds per move")
     parser.add_argument("--seed", type=int, default=defaults.seed, help="base random seed")
+    parser.add_argument("--opening-moves", type=int, default=defaults.opening_moves,
+                        help="random stones before the bots play (each opening is played with both colours)")
     parser.add_argument("--output", default="results", help="output directory")
     parser.add_argument("--quiet", action="store_true", help="do not print each game")
     return parser
@@ -31,11 +33,15 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    if args.games < 1 or args.size < 1 or args.time_limit <= 0:
+    if args.games < 1 or args.size < 1 or args.time_limit <= 0 or args.opening_moves < 0:
         print("error: --games, --size and --time-limit must be positive", file=sys.stderr)
         return 2
     config = TournamentConfig(
-        board_size=args.size, games_per_pair=args.games, time_limit=args.time_limit, seed=args.seed
+        board_size=args.size,
+        games_per_pair=args.games,
+        time_limit=args.time_limit,
+        seed=args.seed,
+        opening_moves=args.opening_moves,
     )
 
     def progress(game: GameRecord) -> None:

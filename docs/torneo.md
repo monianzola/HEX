@@ -11,9 +11,13 @@ hex-arena enfrenta automáticamente a **todos los bots del repositorio** y publi
 |---|---|
 | Sistema | **Round-robin**: cada bot juega contra todos los demás |
 | Tablero | **7×7** (más rápido que 11×11 y suficiente para diferenciar bots) |
-| Partidas por pareja | **20**: 10 con cada color, para compensar la ventaja de empezar |
+| Partidas por pareja | **20**: 10 aperturas distintas, cada una jugada **dos veces, una con cada color**, para compensar la ventaja de empezar |
+| Apertura | **2 fichas colocadas al azar** antes de que empiecen los bots |
 | Tiempo | **1 segundo** por movimiento |
 | Semilla | Fija, para que los resultados sean reproducibles |
+
+!!! info "¿Por qué aperturas aleatorias?"
+    Casi todos nuestros bots son **deterministas**: ante la misma posición juegan siempre lo mismo. Sin aperturas, dos bots deterministas solo pueden jugar **2 partidas distintas** (una con cada color), y el torneo las repetiría 10 veces cada una: un resultado de 20–0 diría muy poco. Con 2 fichas al azar al principio, las 20 partidas son distintas, y jugar cada apertura con ambos colores evita que un bot gane solo por tener una apertura favorable.
 
 ## Clasificación
 
@@ -28,6 +32,8 @@ Para cada bot se calculan:
     ```
 
     con **K = 32**, donde `resultado_A` vale 1 si A gana y 0 si pierde. Ganar a un rival con más Elo da más puntos que ganar a uno más débil.
+
+    Como el Elo se actualiza partida a partida, **el resultado final depende del orden** en que se juegan las partidas. Para que no dependa de eso, se calcula el Elo con **100 órdenes aleatorios** de las mismas partidas (con semilla fija) y se publica la **media**.
 
 ## Robustez: un bot que falla no rompe el torneo
 
