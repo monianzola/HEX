@@ -130,7 +130,8 @@ def to_html(result: TournamentResult) -> str:
     <span class="chip">Tablero {config.board_size}×{config.board_size}</span>
     <span class="chip">{config.games_per_pair} partidas por pareja (mitad con cada color)</span>
     <span class="chip">{config.time_limit:g} s por movimiento</span>
-    <span class="chip">Elo inicial {config.initial_elo:g}, K = {config.k_factor:g}</span>
+    <span class="chip">Apertura: {config.opening_moves} fichas al azar, jugada con ambos colores</span>
+    <span class="chip">Elo inicial {config.initial_elo:g}, K = {config.k_factor:g}, media de {config.elo_orders} órdenes</span>
     <span class="chip">Semilla {config.seed}</span>
   </div>
 

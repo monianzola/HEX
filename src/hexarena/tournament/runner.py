@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import multiprocessing
 import os
+import random
 import subprocess
 import time
 from collections.abc import Callable, Sequence
@@ -12,7 +13,7 @@ from datetime import datetime, timezone
 from itertools import combinations
 from typing import Any
 
-from hexarena.game import BLUE, RED, HexGame, IllegalMoveError
+from hexarena.game import BLUE, RED, HexGame, HexState, IllegalMoveError, Move
 from hexarena.tournament.elo import DEFAULT_K, DEFAULT_RATING, update_elo
 from hexarena.tournament.worker import CRASH, ERROR, OK, TIMEOUT, BotProcess, load_bot_factory
 
@@ -40,6 +41,11 @@ class TournamentConfig:
         seed: Base seed; game ``i`` uses ``seed + i``.
         k_factor: Elo K-factor.
         initial_elo: Starting Elo rating.
+        opening_moves: Random stones placed before the bots start playing. Each
+            opening is played twice, once with each bot as Red, so deterministic
+            bots do not repeat the same game over and over.
+        elo_orders: The final Elo is the average over this many random orders of
+            the games, so it does not depend on the order they were played in.
     """
 
     board_size: int = 7
@@ -48,6 +54,8 @@ class TournamentConfig:
     seed: int = 2026
     k_factor: float = DEFAULT_K
     initial_elo: float = DEFAULT_RATING
+    opening_moves: int = 2
+    elo_orders: int = 100
 
 
 @dataclass(frozen=True)
@@ -73,8 +81,10 @@ class GameRecord:
         reason: ``"connection"`` for a normal win, otherwise why the loser
             forfeited: ``"exception"``, ``"timeout"``, ``"illegal"`` or ``"crash"``.
         detail: Human-readable explanation of a forfeit.
-        moves: Number of legal moves played.
+        moves: Number of legal moves played by the bots (the opening is not counted).
         seed: Seed used for this game.
+        opening: Random stones placed before the bots started (same for both
+            games of the pair).
     """
 
     index: int
@@ -86,6 +96,7 @@ class GameRecord:
     detail: str
     moves: int
     seed: int
+    opening: tuple[Move, ...] = ()
 
 
 @dataclass
@@ -145,14 +156,29 @@ class TournamentResult:
         }
 
 
+def random_opening(game: HexGame, stones: int, rng: random.Random) -> tuple[HexState, tuple[Move, ...]]:
+    """Place up to ``stones`` random stones, alternating colours, without ending the game."""
+    state = game.initial_state()
+    moves: list[Move] = []
+    for _ in range(stones):
+        move = rng.choice(game.legal_moves(state))
+        candidate = game.play(state, move)
+        if game.is_terminal(candidate):
+            break  # Only possible on tiny boards: leave the win to the bots.
+        state = candidate
+        moves.append(move)
+    return state, tuple(moves)
+
+
 def play_safe_game(
     game: HexGame,
     red: BotProcess,
     blue: BotProcess,
     time_limit: float,
     seed: int,
+    start: HexState | None = None,
 ) -> tuple[int, str, str, int]:
-    """Play one game between two bot processes.
+    """Play one game between two bot processes, from ``start`` (or an empty board).
 
     A bot that raises, runs out of time, crashes or plays an illegal move
     loses immediately; the game never raises.
@@ -166,7 +192,7 @@ def play_safe_game(
         if status != OK:
             return _other(colour), FORFEIT_REASONS[status], f"could not start: {payload}", 0
 
-    state = game.initial_state()
+    state = start if start is not None else game.initial_state()
     moves = 0
     while not game.is_terminal(state):
         colour = game.current_player(state)
@@ -218,16 +244,19 @@ def run_tournament(
     processes = {spec: BotProcess(spec, context) for spec in specs}
     records: list[GameRecord] = []
     try:
-        for a, b in combinations(specs, 2):
+        for pair, (a, b) in enumerate(combinations(specs, 2)):
             for i in range(config.games_per_pair):
                 red, blue = (a, b) if i % 2 == 0 else (b, a)
                 index = len(records)
                 seed = config.seed + index
+                # Games 2k and 2k+1 share the same opening, with colours swapped.
+                rng = random.Random(f"{config.seed}:{pair}:{i // 2}")
+                start, opening = random_opening(game, config.opening_moves, rng)
                 colour, reason, detail, moves = play_safe_game(
-                    game, processes[red], processes[blue], config.time_limit, seed
+                    game, processes[red], processes[blue], config.time_limit, seed, start
                 )
                 winner, loser = (red, blue) if colour == RED else (blue, red)
-                record = GameRecord(index, red, blue, winner, loser, reason, detail, moves, seed)
+                record = GameRecord(index, red, blue, winner, loser, reason, detail, moves, seed, opening)
                 records.append(record)
                 if progress is not None:
                     progress(record)
@@ -250,18 +279,37 @@ def run_tournament(
 def compute_standings(
     entrants: Sequence[Entrant], records: Sequence[GameRecord], config: TournamentConfig
 ) -> list[Standing]:
-    """Win/loss counts and Elo (updated game by game, in order), best first."""
+    """Win/loss counts and Elo, best first.
+
+    Elo is updated game by game, so its final value depends on the order of the
+    games. To remove that effect, the Elo is computed over ``config.elo_orders``
+    random orders of the same games (fixed seed) and averaged.
+    """
     table = {
         e.bot: Standing(bot=e.bot, name=e.name, author=e.author, elo=config.initial_elo)
         for e in entrants
     }
     for game in records:
-        winner, loser = table[game.winner], table[game.loser]
-        winner.wins += 1
-        loser.losses += 1
+        table[game.winner].wins += 1
+        table[game.loser].losses += 1
         if game.reason != WIN:
-            loser.forfeits += 1
-        winner.elo, loser.elo = update_elo(winner.elo, loser.elo, 1.0, config.k_factor)
+            table[game.loser].forfeits += 1
+
+    ordered = sorted(records, key=lambda g: g.index)
+    orders = max(1, config.elo_orders)
+    rng = random.Random(config.seed)
+    totals = {bot: 0.0 for bot in table}
+    for n in range(orders):
+        games = ordered if n == 0 else rng.sample(ordered, len(ordered))
+        elo = {bot: config.initial_elo for bot in table}
+        for game in games:
+            elo[game.winner], elo[game.loser] = update_elo(
+                elo[game.winner], elo[game.loser], 1.0, config.k_factor
+            )
+        for bot, value in elo.items():
+            totals[bot] += value
+    for bot, standing in table.items():
+        standing.elo = totals[bot] / orders
     return sorted(table.values(), key=lambda s: (-s.elo, -s.wins, s.bot))
 
 
